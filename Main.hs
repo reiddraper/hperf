@@ -4,7 +4,7 @@ import Prelude hiding (null)
 
 import Data.ByteString (null, ByteString)
 
-import Control.Monad (void, unless)
+import Control.Monad (unless)
 import GHC.IO.Exception (IOErrorType(ResourceVanished))
 import System.Entropy (getEntropy)
 import System.Environment (getArgs)
@@ -19,12 +19,15 @@ usage = putStrLn "Usage"
 message :: IO ByteString
 message = getEntropy 1500
 
-clientLoop :: S.Socket -> ByteString -> IO Bool
-clientLoop sock msg = doSend >>= \b -> if b then clientLoop sock msg else return True
-    where doSend = catchIOError (sendAll sock msg >> return True) handleIOError
-          handleIOError e = if ioeGetErrorType e == ResourceVanished
-                               then return False
-                               else ioError e
+clientLoop :: S.Socket -> ByteString -> IO ()
+clientLoop sock msg = do
+    () <- sendAll sock msg
+    clientLoop sock msg
+
+handleIOError :: IOError -> IO ()
+handleIOError e = if ioeGetErrorType e == ResourceVanished
+                     then putStrLn "Server disconnected"
+                     else ioError e
 
 client :: IO ()
 client = do
@@ -32,7 +35,7 @@ client = do
     sock <- S.socket S.AF_INET S.Stream S.defaultProtocol
     host <- S.inet_addr "127.0.0.1"
     S.connect sock $ S.SockAddrInet 5001 host
-    void $ clientLoop sock msg
+    catchIOError (clientLoop sock msg) handleIOError
 
 serverLoop :: S.Socket -> IO ()
 serverLoop sock = do
