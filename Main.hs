@@ -4,7 +4,7 @@ import Prelude hiding (null)
 
 import Data.ByteString (null, ByteString)
 
-import Control.Monad (void)
+import Control.Monad (void, unless)
 import GHC.IO.Exception (IOErrorType(ResourceVanished))
 import System.Entropy (getEntropy)
 import System.Environment (getArgs)
@@ -37,9 +37,7 @@ client = do
 serverLoop :: S.Socket -> IO ()
 serverLoop sock = do
     bytes <- recv sock 4096
-    if null bytes
-       then error "Timeout"
-       else serverLoop sock
+    unless (null bytes) $ serverLoop sock
 
 server :: IO ()
 server = do
