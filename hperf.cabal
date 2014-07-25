@@ -17,4 +17,4 @@ executable hperf
                      , entropy == 0.3.*
 
   default-language:    Haskell2010
-  ghc-options: -Wall -Werror -O3
+  ghc-options: -Wall -Werror -fno-warn-orphans -O3
