@@ -4,6 +4,7 @@ import Prelude hiding (null)
 
 import Data.ByteString (null, ByteString)
 
+import Control.Concurrent (forkIO)
 import Control.Monad (unless)
 import GHC.IO.Exception (IOErrorType(ResourceVanished))
 import System.Entropy (getEntropy)
@@ -26,7 +27,7 @@ clientLoop sock msg = do
 
 handleIOError :: IOError -> IO ()
 handleIOError e = if ioeGetErrorType e == ResourceVanished
-                     then putStrLn "Server disconnected"
+                     then return ()
                      else ioError e
 
 client :: IO ()
@@ -37,10 +38,16 @@ client = do
     S.connect sock $ S.SockAddrInet 5001 host
     catchIOError (clientLoop sock msg) handleIOError
 
+serverThreadLoop :: S.Socket -> IO ()
+serverThreadLoop sock = do
+    bytes <- recv sock 4096
+    unless (null bytes) $ serverThreadLoop sock
+
 serverLoop :: S.Socket -> IO ()
 serverLoop sock = do
-    bytes <- recv sock 4096
-    unless (null bytes) $ serverLoop sock
+    (clientSock, _clientAddr) <- S.accept sock
+    _threadID <- forkIO $ serverThreadLoop clientSock
+    serverLoop sock
 
 server :: IO ()
 server = do
@@ -48,9 +55,8 @@ server = do
     S.setSocketOption sock S.ReuseAddr 1
     host <- S.inet_addr "127.0.0.1"
     S.bind sock $ S.SockAddrInet 5001 host
-    S.listen sock 10
-    (clientSock, _clientAddr) <- S.accept sock
-    serverLoop clientSock
+    S.listen sock 1
+    serverLoop sock
 
 main :: IO ()
 main = do
