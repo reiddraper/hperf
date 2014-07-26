@@ -26,9 +26,7 @@ clientLoop sock msg = do
     clientLoop sock msg
 
 handleIOError :: IOError -> IO ()
-handleIOError e = if ioeGetErrorType e == ResourceVanished
-                     then return ()
-                     else ioError e
+handleIOError e = unless (ioeGetErrorType e == ResourceVanished) $ ioError e
 
 client :: IO ()
 client = do
