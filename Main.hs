@@ -60,7 +60,7 @@ server = do
     S.setSocketOption sock S.ReuseAddr 1
     host <- S.inet_addr "127.0.0.1"
     S.bind sock $ S.SockAddrInet 5001 host
-    S.listen sock 1
+    S.listen sock 16
     queue <- atomically $ TBQueue.newTBQueue 16
     _threadID <- logLoop queue
     serverLoop queue sock
