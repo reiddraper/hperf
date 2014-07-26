@@ -12,6 +12,7 @@ executable hperf
   main-is:             Main.hs
 
   build-depends:       base >=4.7 && <4.8
+                     , stm == 2.4.*
                      , network == 2.5.*
                      , bytestring == 0.10.*
                      , entropy == 0.3.*
